@@ -1,0 +1,181 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Contact {
+    char name[50];
+    char phone[15];
+    char relation[20];
+    char comment[100];
+    struct Contact* next;
+};
+
+void insertContact(struct Contact** head_ref, char new_name[], char new_phone[], char new_relation[], char new_comment[]) {
+    struct Contact* new_contact = (struct Contact*) malloc(sizeof(struct Contact));
+    strcpy(new_contact->name, new_name);
+    strcpy(new_contact->phone, new_phone);
+    strcpy(new_contact->relation, new_relation);
+    strcpy(new_contact->comment, new_comment);
+    new_contact->next = (*head_ref);
+    (*head_ref) = new_contact;
+}
+
+void displayContactDetails(struct Contact* head, char name[]) {
+    struct Contact* current = head;
+    while (current != NULL) {
+        if (strcmp(name, current->name) == 0) {
+            printf("Name: %s\n", current->name);
+            printf("Phone: %s\n", current->phone);
+            printf("Relation: %s\n", current->relation);
+            printf("Comment: %s\n\n", current->comment);
+            return;
+        }
+        current = current->next;
+    }
+    printf("Contact with the name '%s' not found.\n", name);
+}
+
+int compareContacts(const void* a, const void* b) {
+    return strcmp((*(struct Contact**)a)->name, (*(struct Contact**)b)->name);
+}
+
+void displayAlphabetically(struct Contact* head) {
+    struct Contact* temp = head;
+    int count = 0;
+
+    while(temp) {
+        count++;
+        temp = temp->next;
+    }
+
+    if(count == 0) {
+        printf("No contacts to display.\n");
+        return;
+    }
+
+    struct Contact* arr[count];
+    int i = 0;
+    temp = head;
+
+    while(temp) {
+        arr[i++] = temp;
+        temp = temp->next;
+    }
+
+    qsort(arr, count, sizeof(struct Contact*), compareContacts);
+
+    for(i = 0; i < count; i++) {
+        printf("Name: %s\n", arr[i]->name);
+    }
+
+    printf("\nEnter a name to view details or 'skip' to skip: ");
+    char selectedName[50];
+    scanf("%s", selectedName);
+    if (strcmp(selectedName, "skip") != 0) {
+        displayContactDetails(head, selectedName);
+    }
+}
+
+void deleteContact(struct Contact** head_ref, char name[]) {
+    struct Contact* temp = *head_ref, *prev = NULL;
+
+    if (temp != NULL && strcmp(name, temp->name) == 0) {
+        *head_ref = temp->next;
+        free(temp);
+        printf("Contact deleted.\n");
+        return;
+    }
+
+    while (temp != NULL && strcmp(name, temp->name) != 0) {
+        prev = temp;
+        temp = temp->next;
+    }
+
+    if (temp == NULL) {
+        printf("Contact not found.\n");
+        return;
+    }
+
+    prev->next = temp->next;
+    free(temp);
+    printf("Contact deleted.\n");
+}
+
+void displayContactsBasedOnRelation(struct Contact* head, char relationType[]) {
+    struct Contact* current = head;
+    int displayed = 0;
+
+    printf("\n%s Contacts:\n", relationType);
+
+    while (current != NULL) {
+        if (strcmp(current->relation, relationType) == 0) {
+            printf("Name: %s\n", current->name);
+            displayed++;
+        }
+        current = current->next;
+    }
+
+    if(displayed == 0) {
+        printf("No contacts found under %s.\n", relationType);
+        return;
+    }
+
+    printf("\nEnter a name to view details or 'skip' to skip: ");
+    char selectedName[50];
+    scanf("%s", selectedName);
+    if (strcmp(selectedName, "skip") != 0) {
+        displayContactDetails(head, selectedName);
+    }
+}
+
+int main() {
+    struct Contact* head = NULL;
+    char option;
+    char name[50], phone[15], relation[20], comment[100];
+
+    do {
+        printf("\nChoose an option:\n");
+        printf("a: Add contact\n");
+        printf("d: Delete contact\n");
+        printf("s: Show contacts based on relation\n");
+        printf("l: List all contacts alphabetically\n");
+        printf("q: Quit\n");
+        scanf(" %c", &option);
+
+        switch(option) {
+            case 'a':
+                printf("Enter name: ");
+                scanf("%s", name);
+                printf("Enter phone: ");
+                scanf("%s", phone);
+                printf("Enter relation (family/work/college): ");
+                scanf("%s", relation);
+                getchar();
+                printf("Enter comment: ");
+                fgets(comment, sizeof(comment), stdin);
+                comment[strcspn(comment, "\n")] = '\0';
+                insertContact(&head, name, phone, relation, comment);
+                break;
+            case 'd':
+                printf("Enter name to delete: ");
+                scanf("%s", name);
+                deleteContact(&head, name);
+                break;
+            case 's':
+                printf("Enter relation type to display (family/work/college): ");
+                scanf("%s", relation);
+                displayContactsBasedOnRelation(head, relation);
+                break;
+            case 'l':
+                displayAlphabetically(head);
+                break;
+            case 'q':
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Invalid option!\n");
+        }
+    } while(option != 'q');
+
+    return 0;
+}
